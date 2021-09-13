@@ -21,7 +21,7 @@ from django.utils.translation import gettext_lazy as _
 from simple_history import utils
 
 from . import exceptions
-from .manager import HistoryDescriptor
+from .manager import HistoryDescriptor, SIMPLE_HISTORY_REVERSE_ATTR_NAME
 from .signals import post_create_historical_record, pre_create_historical_record
 from .utils import get_change_reason_from_object
 
@@ -410,7 +410,10 @@ class HistoricalRecords:
                     pass
                 else:
                     attrs.update(values)
-            return model(**attrs)
+            result = model(**attrs)
+            # this is the only way external code could know an instance is historical
+            setattr(result, SIMPLE_HISTORY_REVERSE_ATTR_NAME, self)
+            return result
 
         def get_next_record(self):
             """

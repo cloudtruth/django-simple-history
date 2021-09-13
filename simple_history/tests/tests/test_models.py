@@ -16,7 +16,7 @@ from django.urls import reverse
 
 from simple_history import register
 from simple_history.exceptions import RelatedNameConflictError
-from simple_history.models import HistoricalRecords, ModelChange
+from simple_history.models import HistoricalRecords, ModelChange, SIMPLE_HISTORY_REVERSE_ATTR_NAME
 from simple_history.signals import pre_create_historical_record
 from simple_history.tests.custom_user.models import CustomUser
 from simple_history.tests.tests.utils import (
@@ -367,6 +367,13 @@ class HistoricalRecordsTest(TestCase):
                 "history_type": "~",
             },
         )
+
+    def test_reverse_historical(self):
+        """Tests how we can go from instance to historical record."""
+        document = Document.objects.create()
+        historic = document.history.all()[0]
+        instance = historic.instance
+        self.assertEqual(getattr(instance, SIMPLE_HISTORY_REVERSE_ATTR_NAME).history_date, historic.history_date)
 
     def test_specify_history_user(self):
         user1 = User.objects.create_user("user1", "1@example.com")
