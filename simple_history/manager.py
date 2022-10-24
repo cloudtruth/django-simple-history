@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.db import connection
+from django.db import connection, models
 from django.db.models import Exists, F, OuterRef, QuerySet, Subquery, Window
 from django.db.models.functions.window import FirstValue
 from django.utils import timezone
