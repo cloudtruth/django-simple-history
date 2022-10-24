@@ -1,7 +1,7 @@
 import logging
 from django.conf import settings
 from django.db import connection, models
-from django.db.models import Exists, OuterRef, QuerySet, Subquery
+from django.db.models import Exists, F, OuterRef, QuerySet, Subquery
 from django.utils import timezone
 
 from simple_history.utils import (
@@ -78,14 +78,12 @@ class HistoricalQuerySet(QuerySet):
             latest_historics = self.filter(history_id__in=history_ids.values())
         elif backend == "postgresql":
             latest_pk_attr_historic_ids = (
-                self.filter(history_id=OuterRef(self.history_id))
+                self.filter(history_id=OuterRef(F("history_id")))
                 .order_by(self._pk_attr, "-history_date", "-pk")
                 .values(self._pk_attr)
                 .distinct()
             )
-            print(f"Would you like to see a sub query? {latest_pk_attr_historic_ids.query}")
             latest_historics = self.filter(Exists(latest_pk_attr_historic_ids))
-            print(f"Would you like to see a complete query? {latest_historics.query}")
         else:
             latest_pk_attr_historic_ids = (
                 self.filter(**{self._pk_attr: OuterRef(self._pk_attr)})
