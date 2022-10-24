@@ -78,11 +78,10 @@ class HistoricalQuerySet(QuerySet):
             latest_pk_attr_historic_ids = (
                 self
                 .annotate(
-                    Window(
+                    first_history_id=Window(
                         expression=FirstValue("history_id"),
                         partition_by=[F("id")],
                         order_by=F("history_date").desc(),
-                        output_field="first_history_id"
                     )
                 )
                 .values("first_history_id")
