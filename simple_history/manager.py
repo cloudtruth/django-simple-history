@@ -1,3 +1,4 @@
+import logging
 from django.conf import settings
 from django.db import connection, models
 from django.db.models import Exists, OuterRef, QuerySet, Subquery
@@ -7,6 +8,8 @@ from simple_history.utils import (
     get_app_model_primary_key_name,
     get_change_reason_from_object,
 )
+
+LOGGER = logging.getLogger(__name__)
 
 # when converting a historical record to an instance, this attribute is added
 # to the instance so that code can reverse the instance to its historical record
@@ -75,11 +78,14 @@ class HistoricalQuerySet(QuerySet):
             latest_historics = self.filter(history_id__in=history_ids.values())
         elif backend == "postgresql":
             latest_pk_attr_historic_ids = (
-                self.filter(history_id=OuterRef(self._pk_attr))
+                self.filter(history_id=OuterRef(self.history_id))
                 .order_by(self._pk_attr, "-history_date", "-pk")
                 .distinct(self._pk_attr)
+                .values_list("pk")
             )
+            LOGGER.info(f"Would you like to see a sub query? {latest_pk_attr_historic_ids.query}")
             latest_historics = self.filter(Exists(latest_pk_attr_historic_ids))
+            LOGGER.info(f"Would you like to see a complete query? {latest_historics.query}")
         else:
             latest_pk_attr_historic_ids = (
                 self.filter(**{self._pk_attr: OuterRef(self._pk_attr)})
@@ -206,6 +212,7 @@ class HistoryManager(models.Manager):
         if not self.instance:
             if isinstance(queryset, HistoricalQuerySet):
                 queryset._as_of = date
+
             queryset = queryset.latest_of_each().as_instances()
             return queryset
 
