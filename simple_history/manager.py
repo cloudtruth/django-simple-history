@@ -75,7 +75,7 @@ class HistoricalQuerySet(QuerySet):
             latest_historics = self.filter(history_id__in=history_ids.values())
         elif backend == "postgresql":
             latest_pk_attr_historic_ids = (
-                self.filter(history_id=OuterRef(self.history_id))
+                self.filter(history_id=OuterRef(self.model.history_id))
                 .order_by(self._pk_attr, "-history_date", "-pk")
                 .distinct(self._pk_attr)
                 .values("pk")
