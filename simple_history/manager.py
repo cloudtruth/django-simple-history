@@ -1,15 +1,12 @@
-import logging
 from django.conf import settings
 from django.db import connection, models
-from django.db.models import Exists, F, OuterRef, QuerySet, Subquery
+from django.db.models import Exists, OuterRef, QuerySet, Subquery
 from django.utils import timezone
 
 from simple_history.utils import (
     get_app_model_primary_key_name,
     get_change_reason_from_object,
 )
-
-LOGGER = logging.getLogger(__name__)
 
 # when converting a historical record to an instance, this attribute is added
 # to the instance so that code can reverse the instance to its historical record
@@ -78,10 +75,10 @@ class HistoricalQuerySet(QuerySet):
             latest_historics = self.filter(history_id__in=history_ids.values())
         elif backend == "postgresql":
             latest_pk_attr_historic_ids = (
-                self.filter(history_id=OuterRef(F("history_id")))
+                self.filter(history_id=OuterRef(self.history_id))
                 .order_by(self._pk_attr, "-history_date", "-pk")
-                .values(self._pk_attr)
-                .distinct()
+                .distinct(self._pk_attr)
+                .values("pk")
             )
             latest_historics = self.filter(Exists(latest_pk_attr_historic_ids))
         else:
