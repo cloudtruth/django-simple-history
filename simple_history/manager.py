@@ -81,7 +81,7 @@ class HistoricalQuerySet(QuerySet):
                 self.filter(history_id=OuterRef(self.history_id))
                 .order_by(self._pk_attr, "-history_date", "-pk")
                 .distinct(self._pk_attr)
-                .values_list("pk")
+                .values("pk")
             )
             LOGGER.info(f"Would you like to see a sub query? {latest_pk_attr_historic_ids.query}")
             latest_historics = self.filter(Exists(latest_pk_attr_historic_ids))
