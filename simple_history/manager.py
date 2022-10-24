@@ -1,6 +1,7 @@
 from django.conf import settings
-from django.db import connection, models
-from django.db.models import Exists, OuterRef, QuerySet, Subquery
+from django.db import connection
+from django.db.models import Exists, F, OuterRef, QuerySet, Subquery, Window
+from django.db.models.functions.window import FirstValue
 from django.utils import timezone
 
 from simple_history.utils import (
@@ -77,8 +78,13 @@ class HistoricalQuerySet(QuerySet):
             latest_pk_attr_historic_ids = (
                 self.filter(history_id=OuterRef("history_id"))
                 .order_by(self._pk_attr, "-history_date", "-pk")
-                .distinct(self._pk_attr)
-                .values("pk")
+                .distinct(
+                    Window(
+                        expression=FirstValue("history_id"),
+                        partition_by=[F("id")],
+                        order_by=F("history_date").desc(),
+                    )
+                )
             )
             latest_historics = self.filter(Exists(latest_pk_attr_historic_ids))
         else:
