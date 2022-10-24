@@ -80,12 +80,12 @@ class HistoricalQuerySet(QuerySet):
             latest_pk_attr_historic_ids = (
                 self.filter(history_id=OuterRef(self.history_id))
                 .order_by(self._pk_attr, "-history_date", "-pk")
-                .distinct(self._pk_attr)
-                .values("pk")
+                .values(self._pk_attr)
+                .distinct()
             )
-            LOGGER.info(f"Would you like to see a sub query? {latest_pk_attr_historic_ids.query}")
+            print(f"Would you like to see a sub query? {latest_pk_attr_historic_ids.query}")
             latest_historics = self.filter(Exists(latest_pk_attr_historic_ids))
-            LOGGER.info(f"Would you like to see a complete query? {latest_historics.query}")
+            print(f"Would you like to see a complete query? {latest_historics.query}")
         else:
             latest_pk_attr_historic_ids = (
                 self.filter(**{self._pk_attr: OuterRef(self._pk_attr)})
