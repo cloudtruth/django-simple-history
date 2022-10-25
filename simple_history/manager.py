@@ -77,6 +77,7 @@ class HistoricalQuerySet(QuerySet):
         elif backend == "postgresql":
             latest_pk_attr_historic_ids = (
                 self
+                .filter(history_id=OuterRef("history_id"))
                 .annotate(
                     first_history_id=Window(
                         expression=FirstValue("history_id"),
@@ -84,8 +85,7 @@ class HistoricalQuerySet(QuerySet):
                         order_by=F("history_date").desc(),
                     )
                 )
-                .distinct("first_history_id")
-                .filter(history_id=OuterRef("history_id"))
+                .values("first_history_id")
             )
             latest_historics = self.filter(Exists(latest_pk_attr_historic_ids))
         else:
