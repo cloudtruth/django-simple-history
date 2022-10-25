@@ -84,6 +84,7 @@ class HistoricalQuerySet(QuerySet):
                         order_by=F("history_date").desc(),
                     )
                 )
+                .distinct("first_history_id")
                 .filter(history_id=OuterRef("history_id"))
             )
             latest_historics = self.filter(Exists(latest_pk_attr_historic_ids))
