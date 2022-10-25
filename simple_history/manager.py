@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db import connection, models
-from django.db.models import OuterRef, QuerySet, Subquery
+from django.db.models import Exists, F, OuterRef, QuerySet, Subquery, Window
+from django.db.models.functions.window import FirstValue
 from django.utils import timezone
 
 from simple_history.utils import (
@@ -75,11 +76,17 @@ class HistoricalQuerySet(QuerySet):
             latest_historics = self.filter(history_id__in=history_ids.values())
         elif backend == "postgresql":
             latest_pk_attr_historic_ids = (
-                self.order_by(self._pk_attr, "-history_date", "-pk")
-                .distinct(self._pk_attr)
-                .values_list("pk", flat=True)
+                self
+                .annotate(
+                    first_history_id=Window(
+                        expression=FirstValue("history_id"),
+                        partition_by=[F("id")],
+                        order_by=F("history_date").desc(),
+                    )
+                )
+                .values("first_history_id")
             )
-            latest_historics = self.filter(history_id__in=latest_pk_attr_historic_ids)
+            latest_historics = self.filter(history_id__in=(latest_pk_attr_historic_ids))
         else:
             latest_pk_attr_historic_ids = (
                 self.filter(**{self._pk_attr: OuterRef(self._pk_attr)})
@@ -206,6 +213,7 @@ class HistoryManager(models.Manager):
         if not self.instance:
             if isinstance(queryset, HistoricalQuerySet):
                 queryset._as_of = date
+
             queryset = queryset.latest_of_each().as_instances()
             return queryset
 
